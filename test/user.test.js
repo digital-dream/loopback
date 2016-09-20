@@ -2193,6 +2193,42 @@ describe('User', function() {
     });
   });
 
+  describe('Verification after updating email', function() {
+    var nonVerifiedUser;
+    var originalMyEmailCred = { email: 'original@example.com', password: 'bar',
+    emailVerified: true };
+    var myUpdatedCred = { email: 'updated@example.com' };
+    it('sets verification to false after email update if verification is required',
+    function(done) {
+      User.settings.emailVerificationRequired = true;
+      async.series([
+        function createUser(next) {
+          User.create(originalMyEmailCred, function(err, specialInstance) {
+            if (err) return next (err);
+            nonVerifiedUser = specialInstance;
+            next();
+          });
+        },
+        function updateUser(next) {
+          nonVerifiedUser.updateAttribute('email', myUpdatedCred.email,
+          function(err, info) {
+            if (err) return next (err);
+            assert.equal(info.email, myUpdatedCred.email);
+            next();
+          });
+        },
+        function findUser(next) {
+          User.findById(nonVerifiedUser.id, function(err, info) {
+            if (err) return next (err);
+            assert.equal(info.email, myUpdatedCred.email);
+            assert.equal(info.emailVerified, false);
+            next();
+          });
+        },
+      ], done);
+    });
+  });
+
   describe('password reset with/without email verification', function() {
     it('allows resetPassword by email if email verification is required and done',
     function(done) {
