@@ -685,11 +685,13 @@ module.exports = function(User) {
         });
         if (ctx.instance) {
           var emailChanged = ctx.instance.email !== ctx.hookState.originalUserData[0].email;
+          if (!ctx.Model.settings.emailVerificationRequired) return next();
           if (emailChanged) ctx.instance.emailVerified = false;
         } else {
           var emailChanged = ctx.hookState.originalUserData.some(function(data) {
             return data.email != ctx.data.email;
           });
+          if (!ctx.Model.settings.emailVerificationRequired) return next();
           if (emailChanged) ctx.data.emailVerified = false;
         }
         next();

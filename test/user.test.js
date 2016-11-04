@@ -2227,6 +2227,36 @@ describe('User', function() {
         },
       ], done);
     });
+
+    it('untouches verification after email update if verification is not required',
+    function(done) {
+      User.settings.emailVerificationRequired = false;
+      async.series([
+        function createUser(next) {
+          User.create(originalMyEmailCred, function(err, specialInstance) {
+            if (err) return next (err);
+            nonVerifiedUser = specialInstance;
+            next();
+          });
+        },
+        function updateUser(next) {
+          nonVerifiedUser.updateAttribute('email', myUpdatedCred.email,
+          function(err, info) {
+            if (err) return next (err);
+            assert.equal(info.email, myUpdatedCred.email);
+            next();
+          });
+        },
+        function findUser(next) {
+          User.findById(nonVerifiedUser.id, function(err, info) {
+            if (err) return next (err);
+            assert.equal(info.email, myUpdatedCred.email);
+            assert.equal(info.emailVerified, true);
+            next();
+          });
+        },
+      ], done);
+    });
   });
 
   describe('password reset with/without email verification', function() {
