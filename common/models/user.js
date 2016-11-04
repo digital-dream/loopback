@@ -15,7 +15,6 @@ var path = require('path');
 var SALT_WORK_FACTOR = 10;
 var crypto = require('crypto');
 var MAX_PASSWORD_LENGTH = 72;
-var async = require('async');
 var bcrypt;
 try {
   // Try the native module first
