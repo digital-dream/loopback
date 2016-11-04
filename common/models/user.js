@@ -683,18 +683,16 @@ module.exports = function(User) {
         ctx.hookState.originalUserData = userInstances.map(function(u) {
           return { id: u.id, email: u.email };
         });
-        if (!ctx.instance && !ctx.data) return next();
-        var newEmail = (ctx.instance || ctx.data).email;
-        if (!newEmail) return next();
-        if (!ctx.hookState.originalUserData) return next();
-        var idsToExpire = ctx.hookState.originalUserData.filter(function(u) {
-          return u.email !== newEmail;
-        }).map(function(u) {
-          return u.id;
-        });
-        if (!idsToExpire.length) return next();
-        if (!ctx.Model.settings.emailVerificationRequired) return next();
-        ctx.Model.updateAll({ id: { inq: idsToExpire }}, { emailVerified: false }, next);
+        if (ctx.instance) {
+          var emailChanged = ctx.instance.email !== ctx.hookState.originalUserData[0].email;
+          if (emailChanged) ctx.instance.emailVerified = false;
+        } else {
+          var emailChanged = ctx.hookState.originalUserData.some(function(data) {
+            return data.email != ctx.data.email;
+          });
+          if (emailChanged) ctx.data.emailVerified = false;
+        }
+        next();
       });
     });
 
