@@ -684,7 +684,18 @@ module.exports = function(User) {
         ctx.hookState.originalUserData = userInstances.map(function(u) {
           return { id: u.id, email: u.email };
         });
-        next();
+        if (!ctx.instance && !ctx.data) return next();
+        var newEmail = (ctx.instance || ctx.data).email;
+        if (!newEmail) return next();
+        if (!ctx.hookState.originalUserData) return next();
+        var idsToExpire = ctx.hookState.originalUserData.filter(function(u) {
+          return u.email !== newEmail;
+        }).map(function(u) {
+          return u.id;
+        });
+        if (!idsToExpire.length) return next();
+        if (!ctx.Model.settings.emailVerificationRequired) return next();
+        ctx.Model.updateAll({ id: { inq: idsToExpire }}, { emailVerified: false }, next);
       });
     });
 
@@ -701,19 +712,7 @@ module.exports = function(User) {
         return u.id;
       });
       if (!idsToExpire.length) return next();
-      async.series([
-        function deleteSessions(callback) {
-          AccessToken.deleteAll({ userId: { inq: idsToExpire }}, callback);
-        },
-        function updateEmailVerified(callback) {
-          if (!ctx.Model.settings.emailVerificationRequired) return callback();
-          ctx.Model.updateAll({ id: { inq: idsToExpire }}, { emailVerified: false },
-            function(err, info) {
-              if (err) return callback(err);
-              callback();
-            });
-        },
-      ], next);
+      AccessToken.deleteAll({ userId: { inq: idsToExpire }}, next);
     });
 
     UserModel.remoteMethod(
