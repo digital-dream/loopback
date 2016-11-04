@@ -2228,7 +2228,7 @@ describe('User', function() {
       ], done);
     });
 
-    it('untouches verification after email update if verification is not required',
+    it('leaves verification as is after email update if verification is not required',
     function(done) {
       User.settings.emailVerificationRequired = false;
       async.series([
